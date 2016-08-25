@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.ListView;
 
@@ -99,6 +100,7 @@ public class LruCacheImageLoader {
             ImageView imageView = (ImageView) mListView.findViewWithTag(url);
             displayTagedImageView(imageView,url);
         }
+        Log.i("num of asynctask","  "+mTaskSet.size());
     }
 
 
@@ -108,6 +110,7 @@ public class LruCacheImageLoader {
         private ImageView imageView;
 
 
+
         public LruCacheAsyncTask(ImageView imageView){
             this.imageView = imageView;
         }
@@ -115,6 +118,12 @@ public class LruCacheImageLoader {
         @Override
         protected Bitmap doInBackground(String... strings) {
             Bitmap bitmap = getBitmapFromUrl(strings[0]);
+
+            // 将bitmap缓存到LruCache中
+            if(bitmap!=null){
+                putBitmapToMemory(strings[0],bitmap);
+            }
+
             return bitmap;
         }
 
@@ -126,6 +135,7 @@ public class LruCacheImageLoader {
                 imageView.setImageBitmap(bitmap);
             }
             mTaskSet.remove(this);
+            Log.i("num of asynctask","  "+mTaskSet.size());
         }
 
         private Bitmap getBitmapFromUrl(String urlPath) {
@@ -156,6 +166,8 @@ public class LruCacheImageLoader {
             for (LruCacheAsyncTask task : mTaskSet) {
                 task.cancel(false);
             }
+            mTaskSet.clear();
+            Log.i("num of asynctask","  "+mTaskSet.size());
         }
     }
 

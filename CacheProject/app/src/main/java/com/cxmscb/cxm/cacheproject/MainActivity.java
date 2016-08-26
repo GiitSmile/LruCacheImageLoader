@@ -2,12 +2,10 @@ package com.cxmscb.cxm.cacheproject;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
 import android.widget.AbsListView;
 import android.widget.ListView;
-import android.widget.TextView;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,29 +17,36 @@ public class MainActivity extends AppCompatActivity {
     private String[] urls;
     private boolean mFirstIn ;
 
+    private LruCacheImageLoader lruCacheImageLoader;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
 
+        lruCacheImageLoader = LruCacheImageLoader.getInstance(MainActivity.this);
 
         mBooks = new ArrayList<>();
 
         initData();
         mFirstIn = true;
 
+
+
         listView = (ListView) findViewById(R.id.listview);
 
         listView.setAdapter(new BookAdapter(this,mBooks));
+
 
         listView.setOnScrollListener(new AbsListView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(AbsListView absListView, int i) {
                 if(i==SCROLL_STATE_IDLE){
-                   LruCacheImageLoader.getInstance().loadImageIntoTagImageViewInListView(mStart,mEnd,urls,listView);
+                        lruCacheImageLoader.loadTagImageViewInListView(mStart,mEnd,urls,listView);
                 }else {
-                    LruCacheImageLoader.getInstance().cancelAllTask();
+                    lruCacheImageLoader.cancelAllTask();
                 }
             }
 
@@ -50,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
                 mStart = i;
                 mEnd = i + i1;
                 if(mFirstIn && i1 >0){
-                    LruCacheImageLoader.getInstance().loadImageIntoTagImageViewInListView(mStart,mEnd,urls,listView);
+                        lruCacheImageLoader.loadTagImageViewInListView(mStart,mEnd,urls,listView);
                     mFirstIn = false;
                 }
             }
@@ -81,12 +86,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
     }
-	
-	@Override
-    protected void onStop(){
-        super.onStop();
-        LruCacheImageLoader.getInstance().cancelAllTask();
-    }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+     lruCacheImageLoader.cancelAllTask();
+
+    }
 }
 

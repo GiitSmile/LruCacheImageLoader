@@ -1,10 +1,11 @@
 package com.cxmscb.cxm.cacheproject;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.support.v4.util.LruCache;
-import android.text.TextUtils;
 import android.util.Log;
 import android.widget.ImageView;
 import android.widget.ListView;
@@ -29,8 +30,11 @@ public class LruCacheImageLoader {
     /*ImageLoader的单例*/
     private static LruCacheImageLoader mImageLoader;
 
-    private LruCacheImageLoader(){
+    private Context mContext;
 
+    private LruCacheImageLoader(Context context){
+
+        this.mContext = context;
         mTaskSet = new HashSet<>();
 
         int maxMemory = (int) Runtime.getRuntime().maxMemory();
@@ -46,12 +50,13 @@ public class LruCacheImageLoader {
 
 
     // 获取LruCacheImageLoader的实例(带同步锁)
-    public static LruCacheImageLoader getInstance(){
+    public static LruCacheImageLoader getInstance(Context context){
+
 
         if(mImageLoader==null){
             synchronized (LruCacheImageLoader.class){
                 if(mImageLoader==null)
-                    mImageLoader = new LruCacheImageLoader();
+                    mImageLoader = new LruCacheImageLoader(context);
             }
         }
         return  mImageLoader;
@@ -76,9 +81,11 @@ public class LruCacheImageLoader {
 
     /*------------以上的LruCache的使用-------------*/
 
-    public void displayTagedImageView(ImageView iv, final String url) {
+    /*
+     * 普通地加载图片到imageView中
+     */
+    public void displayImage(ImageView iv, final String url) {
 
-        if(TextUtils.equals(iv.getTag().toString(),url)) {
             //从缓存中取出图片
             Bitmap bitmap = getBitmapFromMemory(url);
             //如果缓存中没有，先设为默认图片
@@ -90,15 +97,25 @@ public class LruCacheImageLoader {
                 //如果缓存中有 直接设置
                 iv.setImageBitmap(bitmap);
             }
-        }
+
     }
 
 
-    public void loadImageIntoTagImageViewInListView(int start, int end, String[] tagUrls, ListView mListView) {
+    /**
+     * 为listview加载从start到end的所有的Image
+     *
+     */
+    public void loadTagImageViewInListView(int start, int end, String[] tagUrls, ListView mListView) {
+
+        Drawable.ConstantState aConstantState = mContext.getResources().getDrawable(R.drawable.loading).getConstantState();
+
         for (int i = start; i < end; i++) {
             String url = tagUrls[i];
             ImageView imageView = (ImageView) mListView.findViewWithTag(url);
-            displayTagedImageView(imageView,url);
+            // 判断图片是否加载过，以免新建多个asynctask
+            if (imageView.getDrawable().getConstantState().equals(aConstantState)) {
+                displayImage(imageView, url);
+            }
         }
         Log.i("num of asynctask","  "+mTaskSet.size());
     }
